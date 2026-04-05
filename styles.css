@@ -1,0 +1,80 @@
+:root {
+  --card-w: 200px;
+  --card-h: 100px;
+}
+
+body {
+  margin: 0;
+  background: #1e1e1e;
+  font-family: Arial, sans-serif;
+  overflow: hidden;
+}
+
+#table {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  background: #2e6b4b;
+}
+
+.card {
+  position: absolute;
+  width: var(--card-w);
+  height: var(--card-h);
+  background: #fffdf8;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform-origin: center;
+  padding: 8px;
+  transition: background 0.3s;
+}
+
+.greek {
+  font-size: 22px;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* overlay */
+
+#overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+}
+
+.modal {
+  background: white;
+  color: black;
+  padding: 20px;
+  border-radius: 16px;
+  width: 300px;
+  text-align: center;
+}
+
+.buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.green { background: #4caf50; color: white; }
+.yellow { background: #ffc107; }
+.red { background: #f44336; color: white; }
