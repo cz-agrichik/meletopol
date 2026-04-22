@@ -37,6 +37,8 @@
     let unseen = [...words];
     let processed = [];
     let activeCard = null;
+    const STORAGE_KEY = 'greek_cards_progress';
+    let progress = {};
 
     const tintMap = {
       green: '#CCFFCC',
@@ -87,7 +89,7 @@
         const card = createCard(entry.item || entry, entry.tint);
         card.style.left = rand(0, w - size.w) + 'px';
         card.style.top = rand(0, h - size.h) + 'px';
-        card.style.transform = `rotate(${rand(-90, 90)}deg)`;
+        card.style.transform = `rotate(${rand(-50, 50)}deg)`;
         card.style.zIndex = Math.floor(Math.random() * 10000);
         table.appendChild(card);
       });
@@ -95,10 +97,21 @@
 
     function pickFromUnseen(n) {
       const res = [];
-      while (res.length < n && unseen.length > 0) {
-        const idx = Math.floor(Math.random() * unseen.length);
-        res.push(unseen.splice(idx, 1)[0]);
+
+      // фильтруем: только те, которых нет в истории
+      const fresh = unseen.filter(w => !progress[w.greek]);
+
+      while (res.length < n && fresh.length > 0) {
+        const idx = Math.floor(Math.random() * fresh.length);
+        const item = fresh.splice(idx, 1)[0];
+
+        // убираем из original unseen тоже
+        const originalIdx = unseen.findIndex(x => x.greek === item.greek);
+        if (originalIdx !== -1) unseen.splice(originalIdx, 1);
+
+        res.push(item);
       }
+
       return res;
     }
 
@@ -106,10 +119,6 @@
       const next = [];
 
       processed.forEach(p => { if (p.grade !== 'green') next.push(p); });
-
-      processed.forEach(p => {
-        if (p.grade === 'green' && Math.random() < 0.4) next.push(p);
-      });
 
       const need = Math.max(0, TABLE_SIZE - next.length);
       const fresh = pickFromUnseen(need);
@@ -124,6 +133,11 @@
 
       processed.push({ item: activeCard.item, grade, tint: tintMap[grade] });
 
+      const key = activeCard.item.greek;
+      if (!progress[key]) progress[key] = [];
+      progress[key].push(Date.now());
+      saveProgress();
+
       activeCard.el.remove();
       activeCard = null;
       overlay.style.display = 'none';
@@ -134,7 +148,24 @@
       }
     }
 
+    function loadProgress() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+
+      try {
+        progress = JSON.parse(raw) || {};
+      } catch {
+        progress = {};
+      }
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    }
+
     function init() {
+      loadProgress();
+
       const initial = pickFromUnseen(TABLE_SIZE);
       scatter(initial);
     }
