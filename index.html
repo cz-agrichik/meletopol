@@ -223,10 +223,21 @@
 
     function updateStats() {
       const total = words.length;
-      const learned = Object.keys(progress).length;
-      const unseen = total - learned;
 
-      statsEl.textContent = `Learned ${learned} / Unseen ${unseen}`;
+      let depth1 = 0;
+      let depth2 = 0;
+
+      Object.values(progress).forEach(p => {
+        const d = p.depth ?? 1;
+
+        if (d === 1) depth1++;
+        else if (d >= 2) depth2++;
+      });
+
+      const unseen = total - Object.keys(progress).length;
+
+      statsEl.textContent =
+        `D2: ${depth2} | D1: ${depth1} | New: ${unseen}`;
     }
 
     function saveProgress() {
