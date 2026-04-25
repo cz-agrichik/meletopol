@@ -10,6 +10,7 @@
 </head>
 <body>
   <div id="table"></div>
+  <div id="stats"></div>
 
   <div id="overlay">
     <div class="modal">
@@ -24,7 +25,7 @@
   </div>
 
   <script src="a1_words.js"></script>
-  <script>
+  <script> 
     const words = window.Words || [];
 
     const table = document.getElementById('table');
@@ -32,7 +33,9 @@
     const modalGreek = document.getElementById('modalGreek');
     const modalTranslation = document.getElementById('modalTranslation');
 
-    const TABLE_SIZE = 20;
+    const TABLE_SIZE = 22;
+    const DUE_AFTER_MS = 10 * 60 * 1000; //
+    const EDGE_PADDING = 80;
 
     let unseen = [...words];
     let processed = [];
@@ -45,6 +48,8 @@
       yellow: '#FFF5CC',
       red: '#FFCCCC'
     };
+
+    const statsEl = document.getElementById('stats');
 
     function rand(min, max) { return Math.random() * (max - min) + min; }
 
@@ -87,29 +92,45 @@
 
       batch.forEach(entry => {
         const card = createCard(entry.item || entry, entry.tint);
-        card.style.left = rand(0, w - size.w) + 'px';
-        card.style.top = rand(0, h - size.h) + 'px';
+        card.style.left = rand(
+          EDGE_PADDING,
+          w - size.w - EDGE_PADDING
+        ) + 'px';
+
+        card.style.top = rand(
+          EDGE_PADDING,
+          h - size.h - EDGE_PADDING
+        ) + 'px';
         card.style.transform = `rotate(${rand(-50, 50)}deg)`;
         card.style.zIndex = Math.floor(Math.random() * 10000);
         table.appendChild(card);
       });
     }
 
-    function pickFromUnseen(n) {
-      const res = [];
+    function getDueCards() {
+      const now = Date.now();
 
-      // фильтруем: только те, которых нет в истории
-      const fresh = unseen.filter(w => !progress[w.greek]);
+      return words.filter(item => {
+        const p = progress[item.greek];
+        if (!p) return false;
+
+        return (
+          (p.depth ?? 1) === 1 &&
+          now - (p.timestamp ?? 0) > DUE_AFTER_MS
+        );
+      });
+    }
+
+    function pickNewCards(n, excludeSet = new Set()) {
+      const fresh = words.filter(item => {
+        return !progress[item.greek] && !excludeSet.has(item.greek);
+      });
+
+      const res = [];
 
       while (res.length < n && fresh.length > 0) {
         const idx = Math.floor(Math.random() * fresh.length);
-        const item = fresh.splice(idx, 1)[0];
-
-        // убираем из original unseen тоже
-        const originalIdx = unseen.findIndex(x => x.greek === item.greek);
-        if (originalIdx !== -1) unseen.splice(originalIdx, 1);
-
-        res.push(item);
+        res.push(fresh.splice(idx, 1)[0]);
       }
 
       return res;
@@ -118,11 +139,33 @@
     function buildNextBatch() {
       const next = [];
 
-      processed.forEach(p => { if (p.grade !== 'green') next.push(p); });
+      processed.forEach(p => {
+        if (p.grade !== 'green') next.push(p);
+      });
 
-      const need = Math.max(0, TABLE_SIZE - next.length);
-      const fresh = pickFromUnseen(need);
-      fresh.forEach(item => next.push(item));
+      const used = new Set(
+        next.map(entry => (entry.item || entry).greek)
+      );
+
+      const due = getDueCards()
+        .filter(item => !used.has(item.greek))
+        .sort(() => Math.random() - 0.5);
+
+      while (next.length < TABLE_SIZE && due.length > 0) {
+        const item = due.shift();
+        used.add(item.greek);
+        next.push({
+          item,
+          tint: tintMap.green
+        });
+      }
+
+      const need = TABLE_SIZE - next.length;
+
+      if (need > 0) {
+        const fresh = pickNewCards(need, used);
+        fresh.forEach(item => next.push(item));
+      }
 
       processed = [];
       return next;
@@ -134,9 +177,28 @@
       processed.push({ item: activeCard.item, grade, tint: tintMap[grade] });
 
       const key = activeCard.item.greek;
-      if (!progress[key]) progress[key] = [];
-      progress[key].push(Date.now());
+      const now = Date.now();
+
+      const wasInProgress = !!progress[key];
+
+      if (grade === 'green') {
+        if (wasInProgress) {
+          progress[key] = {
+            depth: (progress[key].depth ?? 1) + 1,
+            timestamp: now
+          };
+        } else {
+          progress[key] = {
+            depth: 1,
+            timestamp: now
+          };
+        }
+      } else if (wasInProgress) {
+        delete progress[key];
+      }
+
       saveProgress();
+      updateStats();
 
       activeCard.el.remove();
       activeCard = null;
@@ -159,6 +221,14 @@
       }
     }
 
+    function updateStats() {
+      const total = words.length;
+      const learned = Object.keys(progress).length;
+      const unseen = total - learned;
+
+      statsEl.textContent = `Learned ${learned} / Unseen ${unseen}`;
+    }
+
     function saveProgress() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
     }
@@ -166,8 +236,9 @@
     function init() {
       loadProgress();
 
-      const initial = pickFromUnseen(TABLE_SIZE);
+      const initial = buildNextBatch();
       scatter(initial);
+      updateStats();
     }
 
     document.querySelectorAll('.btn').forEach(btn => {

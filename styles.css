@@ -75,6 +75,18 @@ body {
   cursor: pointer;
 }
 
+#stats {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  color: white;
+  font-size: 14px;
+  z-index: 100000;
+  background: rgba(0,0,0,0.4);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
 .green { background: #4caf50; color: white; }
 .yellow { background: #ffc107; }
 .red { background: #f44336; color: white; }
