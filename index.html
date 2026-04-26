@@ -20,6 +20,7 @@
         <button class="btn green" data-grade="green">✓</button>
         <button class="btn yellow" data-grade="yellow">~</button>
         <button class="btn red" data-grade="red">✗</button>
+        <button class="help-btn">Запомнить</button>
       </div>
     </div>
   </div>
@@ -210,6 +211,18 @@
       }
     }
 
+    function handleHelp() {
+      if (!activeCard) return;
+
+      const word = activeCard.item.greek;
+
+      const query = `${word} перевод на русский этимология примеры использования родственные слова в русском языке идеи для запоминания`;
+
+      const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+
+      window.open(url, '_blank');
+    }
+
     function loadProgress() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
@@ -255,6 +268,9 @@
     document.querySelectorAll('.btn').forEach(btn => {
       btn.addEventListener('click', () => handleGrade(btn.dataset.grade));
     });
+
+    document.querySelector('.help-btn')
+      .addEventListener('click', handleHelp);
 
     init();
   </script>

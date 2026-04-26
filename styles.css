@@ -90,3 +90,18 @@ body {
 .green { background: #4caf50; color: white; }
 .yellow { background: #ffc107; }
 .red { background: #f44336; color: white; }
+.help-btn {
+  background: #3b82f6;
+  color: white;
+  font-weight: bold;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.help-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.help-btn:active {
+  transform: scale(0.95);
+}
