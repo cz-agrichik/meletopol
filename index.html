@@ -35,7 +35,8 @@
     const modalTranslation = document.getElementById('modalTranslation');
 
     const TABLE_SIZE = 22;
-    const DUE_AFTER_MS = 10 * 60 * 1000; //
+    const DUE_DEPTH_1_MS = 10 * 60 * 1000; // 10 минут
+    const DUE_DEPTH_2_MS = 6 * 60 * 60 * 1000; // 6 часов
     const EDGE_PADDING = 80;
 
     let unseen = [...words];
@@ -115,10 +116,18 @@
         const p = progress[item.greek];
         if (!p) return false;
 
-        return (
-          (p.depth ?? 1) === 1 &&
-          now - (p.timestamp ?? 0) > DUE_AFTER_MS
-        );
+        const depth = p.depth ?? 1;
+        const elapsed = now - (p.timestamp ?? 0);
+
+        if (depth === 1) {
+          return elapsed > DUE_DEPTH_1_MS;
+        }
+
+        if (depth === 2) {
+          return elapsed > DUE_DEPTH_2_MS;
+        }
+
+        return false; // depth >= 3 не показываем
       });
     }
 
@@ -239,18 +248,20 @@
 
       let depth1 = 0;
       let depth2 = 0;
+      let depth3 = 0;
 
       Object.values(progress).forEach(p => {
         const d = p.depth ?? 1;
 
         if (d === 1) depth1++;
-        else if (d >= 2) depth2++;
+          else if (d === 2) depth2++;
+          else if (d >= 3) depth3++;
       });
 
       const unseen = total - Object.keys(progress).length;
 
       statsEl.textContent =
-        `D2: ${depth2} | D1: ${depth1} | New: ${unseen}`;
+        `D3: ${depth3} | D2: ${depth2} | D1: ${depth1} | New: ${unseen}`;
     }
 
     function saveProgress() {
