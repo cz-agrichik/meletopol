@@ -9,8 +9,12 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="topbar">
+    <div id="stats"></div>
+    <button id="tomatoBtn">🍅</button>
+  </div>
   <div id="table"></div>
-  <div id="stats"></div>
+  
 
   <div id="overlay">
     <div class="modal">
@@ -24,6 +28,22 @@
       </div>
     </div>
   </div>
+  <div id="tomatoOverlay">
+    <div class="tomatoModal">
+
+      <div class="timerInputs">
+        <input id="minutesInput" type="number" min="0" value="10" />
+        <span>:</span>
+        <input id="secondsInput" type="number" min="0" max="59" value="00" />
+      </div>
+
+      <div class="timerButtons">
+        <button id="startTomatoBtn">▶</button>
+        <button id="cancelTomatoBtn">✕</button>
+      </div>
+
+    </div>
+  </div>
 
   <script src="a1_words.js"></script>
   <script> 
@@ -33,6 +53,15 @@
     const overlay = document.getElementById('overlay');
     const modalGreek = document.getElementById('modalGreek');
     const modalTranslation = document.getElementById('modalTranslation');
+
+    const startTomatoBtn = document.getElementById('startTomatoBtn');
+    const cancelTomatoBtn = document.getElementById('cancelTomatoBtn');
+
+    const minutesInput = document.getElementById('minutesInput');
+    const secondsInput = document.getElementById('secondsInput');
+
+    let tomatoTimer = null;
+    let tomatoRemaining = 0;
 
     const TABLE_SIZE = 22;
     const DUE_DEPTH_1_MS = 10 * 60 * 1000; // 10 минут
@@ -282,6 +311,58 @@
 
     document.querySelector('.help-btn')
       .addEventListener('click', handleHelp);
+
+    tomatoBtn.addEventListener('click', () => {
+      tomatoOverlay.style.display = 'flex';
+    });
+
+    tomatoOverlay.addEventListener('click', (e) => {
+      if (e.target === tomatoOverlay) {
+        tomatoOverlay.style.display = 'none';
+      }
+    });
+
+    function updateTomatoButton() {
+      const mins = Math.floor(tomatoRemaining / 60);
+      const secs = tomatoRemaining % 60;
+
+      tomatoBtn.textContent =
+        `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    startTomatoBtn.addEventListener('click', () => {
+      const minutes = Number(minutesInput.value || 0);
+      const seconds = Number(secondsInput.value || 0);
+
+      tomatoRemaining = minutes * 60 + seconds;
+
+      if (tomatoRemaining <= 0) return;
+
+      tomatoOverlay.style.display = 'none';
+
+      updateTomatoButton();
+
+      clearInterval(tomatoTimer);
+
+      tomatoTimer = setInterval(() => {
+        tomatoRemaining--;
+
+        updateTomatoButton();
+
+        if (tomatoRemaining <= 0) {
+          clearInterval(tomatoTimer);
+          tomatoTimer = null;
+
+          tomatoBtn.textContent = '🍅';
+
+          alert('Помидор закончился');
+        }
+      }, 1000);
+    });
+
+    cancelTomatoBtn.addEventListener('click', () => {
+      tomatoOverlay.style.display = 'none';
+    });
 
     init();
   </script>
